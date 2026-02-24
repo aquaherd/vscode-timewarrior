@@ -74,20 +74,22 @@ export class DataFileTreeProvider
         .sort((obj1, obj2) => obj2.date.getTime() - obj1.date.getTime());
     }
     if (element instanceof DataFile) {
+      const dataFile = element;
       const intervals = (await element.getIntervals())
         .slice()
         .sort((obj1, obj2) => obj2.start.getTime() - obj1.start.getTime());
 
       return intervals.reduce((prev, curr) => {
         const key = curr.start.toLocaleDateString();
-        const element = prev.find(group => group.key === key);
-        if (element) {
-          element.intervals.push(curr);
+        const group = prev.find(obj => obj.key === key);
+        if (group) {
+          group.intervals.push(curr);
         } else {
           prev.push({
             key,
             start: curr.start,
             intervals: [curr],
+            dataFile,
           });
         }
         return prev;

@@ -95,6 +95,12 @@
                 "title": "Timewarrior month summary",
                 "category": "timewarrior",
                 "icon": "$(graph)"
+            },
+            {
+                "command": "timewarrior.dayEditor",
+                "title": "Timewarrior day editor",
+                "category": "timewarrior",
+                "icon": "$(edit)"
             }
         ],
         "menus": {
@@ -124,6 +130,11 @@
                 {
                     "command": "timewarrior.monthSummary",
                     "when": "view == timewarrior_history && viewItem == dataFile",
+                    "group": "inline"
+                },
+                {
+                    "command": "timewarrior.dayEditor",
+                    "when": "view == timewarrior_history && viewItem == date",
                     "group": "inline"
                 }
             ]

@@ -28,12 +28,15 @@ interface DayEditorRow {
 
 export class CommandsProvider extends DisposeProvider {
   #activeDataFile: DataFile | undefined;
+  readonly #monthSummaryPanels: Map<string, vscode.WebviewPanel>;
   constructor(private readonly dataFileEvent: vscode.Event<Array<DataFile>>) {
     super();
+    this.#monthSummaryPanels = new Map<string, vscode.WebviewPanel>();
 
     this.subscriptions = [
       dataFileEvent(dataFiles => {
         this.#activeDataFile = dataFiles.find(obj => obj.isActive);
+        this.refreshOpenMonthSummaries(dataFiles);
       }),
       vscode.commands.registerCommand('timewarrior.start', this.start, this),
       vscode.commands.registerCommand('timewarrior.startNoTags', this.startNoTags, this),
@@ -127,16 +130,37 @@ export class CommandsProvider extends DisposeProvider {
       return;
     }
 
-    const summary = await this.createMonthSummary(target);
-    const panel = vscode.window.createWebviewPanel(
-      'timewarrior_month_summary',
-      `Timewarrior ${summary.title}`,
-      vscode.ViewColumn.Active,
-      {
-        enableFindWidget: true,
-      }
-    );
+    const key = target.uri.toString();
+    const existingPanel = this.#monthSummaryPanels.get(key);
+    if (existingPanel) {
+      existingPanel.reveal(vscode.ViewColumn.Active);
+      await this.renderMonthSummaryPanel(existingPanel, target);
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel('timewarrior_month_summary', '', vscode.ViewColumn.Active, {
+      enableFindWidget: true,
+    });
+    this.#monthSummaryPanels.set(key, panel);
+    panel.onDidDispose(() => {
+      this.#monthSummaryPanels.delete(key);
+    });
+    await this.renderMonthSummaryPanel(panel, target);
+  }
+
+  private async renderMonthSummaryPanel(panel: vscode.WebviewPanel, dataFile: DataFile) {
+    const summary = await this.createMonthSummary(dataFile);
+    panel.title = `Timewarrior ${summary.title}`;
     panel.webview.html = this.getMonthSummaryHtml(summary);
+  }
+
+  private refreshOpenMonthSummaries(dataFiles: Array<DataFile>) {
+    for (const [uri, panel] of this.#monthSummaryPanels.entries()) {
+      const dataFile = dataFiles.find(obj => obj.uri.toString() === uri);
+      if (dataFile) {
+        this.renderMonthSummaryPanel(panel, dataFile);
+      }
+    }
   }
 
   private async dayEditor(day?: DateIntervals): Promise<void> {
@@ -237,6 +261,11 @@ export class CommandsProvider extends DisposeProvider {
     const content = merged.map(interval => `inc ${interval.fileFormat}`).join('\n');
     await vscode.workspace.fs.writeFile(day.dataFile.uri, Buffer.from(content ? `${content}\n` : '', 'utf-8'));
     day.dataFile.invalidateIntervals();
+
+    const monthPanel = this.#monthSummaryPanels.get(day.dataFile.uri.toString());
+    if (monthPanel) {
+      await this.renderMonthSummaryPanel(monthPanel, day.dataFile);
+    }
   }
 
   private getTimeInputValue(date: Date) {
@@ -257,9 +286,9 @@ export class CommandsProvider extends DisposeProvider {
     const tagsDatalist = tagOptions.map(tag => `<option value="${this.escapeHtml(tag)}"></option>`).join('');
     const rowsHtml = rows
       .map(
-        row => `<tr>
-  <td><input class="time-input" type="time" value="${this.escapeHtml(row.start)}"></td>
-  <td><input class="time-input" type="time" value="${this.escapeHtml(row.end)}"></td>
+          row => `<tr>
+        <td><input class="time-input mono" type="time" value="${this.escapeHtml(row.start)}"></td>
+        <td><input class="time-input mono" type="time" value="${this.escapeHtml(row.end)}"></td>
   <td><input class="tags-input" type="text" list="timewarrior-tags" value="${this.escapeHtml(row.tags)}" placeholder="tag1, tag2"></td>
   <td><button class="remove-btn" type="button" title="Remove row">Remove</button></td>
 </tr>`
@@ -284,6 +313,8 @@ export class CommandsProvider extends DisposeProvider {
     .time-input { width: 110px; }
     .tags-input { width: 100%; }
     input { border: 1px solid var(--vscode-input-border); background: var(--vscode-input-background); color: var(--vscode-input-foreground); border-radius: 4px; padding: 4px 6px; }
+    .mono { font-family: var(--vscode-editor-font-family), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-variant-numeric: tabular-nums; }
+    .time-input { font-family: var(--vscode-editor-font-family), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-variant-numeric: tabular-nums; }
     .hint { color: var(--vscode-descriptionForeground); margin: 8px 0 14px 0; }
     .status { margin: 8px 0 12px 0; color: var(--vscode-descriptionForeground); }
   </style>
@@ -351,7 +382,7 @@ export class CommandsProvider extends DisposeProvider {
 
     const createRow = (start = '09:00', end = '17:00', tags = '') => {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td><input class="time-input" type="time"></td><td><input class="time-input" type="time"></td><td><input class="tags-input" type="text" list="timewarrior-tags" placeholder="tag1, tag2"></td><td><button class="remove-btn" type="button" title="Remove row">Remove</button></td>';
+      tr.innerHTML = '<td><input class="time-input mono" type="time"></td><td><input class="time-input mono" type="time"></td><td><input class="tags-input" type="text" list="timewarrior-tags" placeholder="tag1, tag2"></td><td><button class="remove-btn" type="button" title="Remove row">Remove</button></td>';
       tr.querySelectorAll('input')[0].value = start;
       tr.querySelectorAll('input')[1].value = end;
       tr.querySelectorAll('input')[2].value = tags;
@@ -664,11 +695,11 @@ export class CommandsProvider extends DisposeProvider {
     .legend-row { display: grid; grid-template-columns: 12px minmax(120px, 1fr) auto; align-items: center; gap: 8px; margin-bottom: 6px; }
     .legend-swatch { width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--vscode-panel-border); }
     .legend-tag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .legend-value { color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
+    .legend-value { color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-variant-numeric: tabular-nums; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-panel-border); text-align: left; }
     th { font-weight: 600; }
-    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .num { text-align: right; font-family: var(--vscode-editor-font-family), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-variant-numeric: tabular-nums; }
     .section { margin-top: 18px; }
   </style>
 </head>

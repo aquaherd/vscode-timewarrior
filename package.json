@@ -89,6 +89,12 @@
                 "title": "Timewarrior edit",
                 "category": "timewarrior",
                 "icon": "$(edit)"
+            },
+            {
+                "command": "timewarrior.monthSummary",
+                "title": "Timewarrior month summary",
+                "category": "timewarrior",
+                "icon": "$(graph)"
             }
         ],
         "menus": {
@@ -112,6 +118,13 @@
                     "command": "timewarrior.checkIn",
                     "when": "view == timewarrior_history",
                     "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "timewarrior.monthSummary",
+                    "when": "view == timewarrior_history && viewItem == dataFile",
+                    "group": "inline"
                 }
             ]
         },

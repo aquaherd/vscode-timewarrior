@@ -79,7 +79,7 @@ export class DataFileTreeProvider
         .slice()
         .sort((obj1, obj2) => obj2.start.getTime() - obj1.start.getTime());
 
-      return intervals.reduce((prev, curr) => {
+      const dateIntervals = intervals.reduce((prev, curr) => {
         const key = curr.start.toLocaleDateString();
         const group = prev.find(obj => obj.key === key);
         if (group) {
@@ -93,7 +93,23 @@ export class DataFileTreeProvider
           });
         }
         return prev;
-      }, [] as Array<DateIntervals>).sort((obj1, obj2) => obj2.start.getTime() - obj1.start.getTime());
+      }, [] as Array<DateIntervals>);
+
+      if (dataFile.isActive) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayKey = today.toLocaleDateString();
+        if (!dateIntervals.find(obj => obj.key === todayKey)) {
+          dateIntervals.unshift({
+            key: todayKey,
+            start: today,
+            intervals: [],
+            dataFile,
+          });
+        }
+      }
+
+      return dateIntervals.sort((obj1, obj2) => obj2.start.getTime() - obj1.start.getTime());
     }
     if (element instanceof Interval) {
       return undefined;

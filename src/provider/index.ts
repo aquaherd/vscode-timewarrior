@@ -3,4 +3,5 @@ export * from './commandsProvider';
 export * from './dataFileTreeProvider';
 export * from './reminderProvider';
 export * from './statusBarItemProvider';
+export * from './todayTreeProvider';
 export * from './treeItem';

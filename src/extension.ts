@@ -11,6 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
     ...[
       new provider.CommandsProvider(dataFileEventEmitter.event),
       new provider.DataFileTreeProvider(dataFileEventEmitter.event),
+      new provider.TodayTreeProvider(dataFileEventEmitter.event),
       new provider.StatusBarItemProvider(dataFileEventEmitter.event),
       new provider.ReminderProvider(dataFileEventEmitter.event),
       vscode.workspace.onDidChangeConfiguration(e => {

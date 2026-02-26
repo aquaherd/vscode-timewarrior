@@ -5,4 +5,5 @@ export * from './dayEditorProvider';
 export * from './monthSummaryProvider';
 export * from './reminderProvider';
 export * from './statusBarItemProvider';
+export * from './todayTreeProvider';
 export * from './treeItem';

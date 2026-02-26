@@ -101,6 +101,12 @@
                 "title": "Timewarrior day editor",
                 "category": "timewarrior",
                 "icon": "$(edit)"
+            },
+            {
+                "command": "timewarrior.editToday",
+                "title": "Timewarrior edit today",
+                "category": "timewarrior",
+                "icon": "$(edit)"
             }
         ],
         "menus": {
@@ -123,6 +129,16 @@
                 {
                     "command": "timewarrior.checkIn",
                     "when": "view == timewarrior_history",
+                    "group": "navigation"
+                },
+                {
+                    "command": "timewarrior.editToday",
+                    "when": "view == timewarrior_today",
+                    "group": "navigation"
+                },
+                {
+                    "command": "timewarrior.checkIn",
+                    "when": "view == timewarrior_today",
                     "group": "navigation"
                 }
             ],
@@ -292,6 +308,10 @@
             {
                 "view": "timewarrior_history",
                 "contents": "no timewarrior history"
+            },
+            {
+                "view": "timewarrior_today",
+                "contents": "no timewarrior entries for today"
             }
         ],
         "viewsContainers": {
@@ -305,6 +325,11 @@
         },
         "views": {
             "timewarrior-views": [
+                {
+                    "id": "timewarrior_today",
+                    "name": "Today",
+                    "visibility": "visible"
+                },
                 {
                     "id": "timewarrior_history",
                     "name": "History",

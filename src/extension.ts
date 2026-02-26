@@ -15,6 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
       monthSummaryProvider,
       new provider.DayEditorProvider(monthSummaryProvider),
       new provider.DataFileTreeProvider(dataFileEventEmitter.event),
+      new provider.TodayTreeProvider(dataFileEventEmitter.event),
       new provider.StatusBarItemProvider(dataFileEventEmitter.event),
       new provider.ReminderProvider(dataFileEventEmitter.event),
       vscode.workspace.onDidChangeConfiguration(e => {

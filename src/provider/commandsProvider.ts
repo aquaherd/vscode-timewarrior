@@ -202,6 +202,7 @@ export class CommandsProvider extends DisposeProvider {
         try {
           await this.saveDay(day, message.rows as Array<DayEditorRow>);
           await vscode.commands.executeCommand('timewarrior.refreshHistory');
+          await vscode.commands.executeCommand('timewarrior.refreshToday');
           vscode.window.showInformationMessage(`Saved ${title}`);
         } catch (err) {
           const text = err instanceof Error ? err.message : `${err}`;

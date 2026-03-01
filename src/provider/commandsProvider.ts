@@ -74,7 +74,7 @@ export class CommandsProvider extends DisposeProvider {
 
   private async tag() {
     const tags = await actions.getInputArgs(this.#activeDataFile);
-    if (tags) {
+    if (tags?.length) {
       await timew('tag', tags);
     }
   }

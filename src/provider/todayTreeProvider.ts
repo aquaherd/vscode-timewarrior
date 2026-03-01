@@ -20,8 +20,14 @@ export class TodayTreeProvider extends DisposeProvider implements vscode.TreeDat
       }),
       this.#onDidChangeTreeDataEmitter,
       vscode.commands.registerCommand('timewarrior.editToday', this.editToday, this),
+      vscode.commands.registerCommand('timewarrior.refreshToday', this.refreshToday, this),
       vscode.window.registerTreeDataProvider('timewarrior_today', this),
     ];
+  }
+
+  private async refreshToday() {
+    this.todayDataFile?.invalidateIntervals();
+    await this.loadTodayIntervals();
   }
 
   private async loadTodayIntervals() {

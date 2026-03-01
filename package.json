@@ -107,6 +107,11 @@
                 "title": "Timewarrior edit today",
                 "category": "timewarrior",
                 "icon": "$(edit)"
+            },
+            {
+                "command": "timewarrior.refreshToday",
+                "title": "Timewarrior refreshToday",
+                "category": "timewarrior"
             }
         ],
         "menus": {
@@ -117,6 +122,10 @@
                 },
                 {
                     "command": "timewarrior.ignoreTimeBasedInterval",
+                    "when": "false"
+                },
+                {
+                    "command": "timewarrior.refreshToday",
                     "when": "false"
                 }
             ],

@@ -10,6 +10,8 @@ interface DayEditorRow {
 }
 
 export class DayEditorProvider extends DisposeProvider {
+  readonly #dayEditorPanels = new Map<string, vscode.WebviewPanel>();
+
   constructor(private readonly _monthSummaryProvider: MonthSummaryProvider) {
     super();
 
@@ -19,6 +21,13 @@ export class DayEditorProvider extends DisposeProvider {
   private async dayEditor(day?: DateIntervals): Promise<void> {
     if (!day?.dataFile) {
       vscode.window.showInformationMessage('No day selected for editing.');
+      return;
+    }
+
+    const key = `${day.dataFile.uri.toString()}_${day.start.toDateString()}`;
+    const existingPanel = this.#dayEditorPanels.get(key);
+    if (existingPanel) {
+      existingPanel.reveal(vscode.ViewColumn.Active);
       return;
     }
 
@@ -43,8 +52,11 @@ export class DayEditorProvider extends DisposeProvider {
       {
         enableScripts: true,
         enableFindWidget: true,
+        retainContextWhenHidden: true,
       }
     );
+    this.#dayEditorPanels.set(key, panel);
+    panel.onDidDispose(() => this.#dayEditorPanels.delete(key));
     panel.webview.html = this.getDayEditorHtml(title, rows, tagOptions);
     panel.webview.onDidReceiveMessage(
       async message => {

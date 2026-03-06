@@ -118,7 +118,7 @@ export class DayEditorProvider extends DisposeProvider {
     const kept = intervals.filter(interval => !this.isSameDay(interval.start, day.start));
     const merged = [...kept, ...replacementIntervals].sort((obj1, obj2) => obj1.start.getTime() - obj2.start.getTime());
     const content = merged.map(interval => `inc ${interval.fileFormat}`).join('\n');
-    await vscode.workspace.fs.writeFile(day.dataFile.uri, Buffer.from(content ? `${content}\n` : '', 'utf-8'));
+    await vscode.workspace.fs.writeFile(day.dataFile.uri, new TextEncoder().encode(content ? `${content}\n` : ''));
     day.dataFile.invalidateIntervals();
 
     this._monthSummaryProvider.refreshMonthDataFile(day.dataFile);

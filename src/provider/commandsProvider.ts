@@ -1,9 +1,34 @@
 import * as vscode from 'vscode';
-import { DataFile, DisposeProvider, timew } from '../dataAccess';
+import { DataFile, DisposeProvider, formatDate, formatDuration, Interval, timew } from '../dataAccess';
+import { DateIntervals } from './treeItem';
 import * as actions from './actions';
+
+interface DayEditorRow {
+  start: string;
+  end: string;
+  tags: string;
+}
+
+interface TagSummary {
+  tag: string;
+  duration: number;
+  estimatedDuration: number;
+}
+
+interface MonthSummary {
+  title: string;
+  dailyDurations: Array<number>;
+  totalDuration: number;
+  tags: Array<TagSummary>;
+  individualTags: Array<TagSummary>;
+  hasMultiTagIntervals: boolean;
+  showEstimation: boolean;
+  estimationLabel: string;
+}
 
 export class CommandsProvider extends DisposeProvider {
   #activeDataFile: DataFile | undefined;
+  #monthSummaryPanels = new Map<string, vscode.WebviewPanel>();
   constructor() {
     super();
 
@@ -56,8 +81,8 @@ export class CommandsProvider extends DisposeProvider {
     const result =
       actions.length > 1
         ? await vscode.window.showQuickPick(actions, {
-            placeHolder: 'Please select action',
-          })
+          placeHolder: 'Please select action',
+        })
         : actions.pop();
     if (result) {
       if (result.args && !Array.isArray(result.args)) {
@@ -215,9 +240,9 @@ export class CommandsProvider extends DisposeProvider {
 
       const tags = row.tags
         ? row.tags
-            .split(',')
-            .map(obj => obj.trim())
-            .filter(Boolean)
+          .split(',')
+          .map(obj => obj.trim())
+          .filter(Boolean)
         : [];
       const tagList = tags.map(obj => (obj.includes(' ') ? `"${obj}"` : obj)).join(' ');
       const tagsText = tagList ? ` # ${tagList}` : '';
@@ -255,7 +280,7 @@ export class CommandsProvider extends DisposeProvider {
     const tagsDatalist = tagOptions.map(tag => `<option value="${this.escapeHtml(tag)}"></option>`).join('');
     const rowsHtml = rows
       .map(
-          row => `<tr>
+        row => `<tr>
         <td><input class="time-input mono" type="time" value="${this.escapeHtml(row.start)}"></td>
         <td><input class="time-input mono" type="time" value="${this.escapeHtml(row.end)}"></td>
   <td><input class="tags-input" type="text" list="timewarrior-tags" value="${this.escapeHtml(row.tags)}" placeholder="tag1, tag2"></td>
@@ -595,12 +620,12 @@ export class CommandsProvider extends DisposeProvider {
     const legendItems =
       summary.tags.length > 0
         ? summary.tags
-            .map((tag, index) => {
-              const ratio = totalTagDuration > 0 ? (tag.duration / totalTagDuration) * 100 : 0;
-              const ratioLabel = `${ratio.toFixed(1)}%`;
-              return `<div class="legend-row"><span class="legend-swatch" style="background:${pieColors[index % pieColors.length]};"></span><span class="legend-tag">${this.escapeHtml(tag.tag)}</span><span class="legend-value">${this.formatDuration(tag.duration)} · ${ratioLabel}</span></div>`;
-            })
-            .join('')
+          .map((tag, index) => {
+            const ratio = totalTagDuration > 0 ? (tag.duration / totalTagDuration) * 100 : 0;
+            const ratioLabel = `${ratio.toFixed(1)}%`;
+            return `<div class="legend-row"><span class="legend-swatch" style="background:${pieColors[index % pieColors.length]};"></span><span class="legend-tag">${this.escapeHtml(tag.tag)}</span><span class="legend-value">${this.formatDuration(tag.duration)} · ${ratioLabel}</span></div>`;
+          })
+          .join('')
         : '<div class="muted">No tracked tags for this month.</div>';
 
     const emptyEstimationColumn = summary.showEstimation ? '<td class="num">00:00</td>' : '';
@@ -608,13 +633,13 @@ export class CommandsProvider extends DisposeProvider {
     const rows =
       summary.tags.length > 0
         ? summary.tags
-            .map(tag => {
-              const estimationColumn = summary.showEstimation
-                ? `<td class="num">${this.formatDuration(tag.estimatedDuration)}</td>`
-                : '';
-              return `<tr><td>${this.escapeHtml(tag.tag)}</td><td class="num">${this.formatDuration(tag.duration)}</td>${estimationColumn}</tr>`;
-            })
-            .join('')
+          .map(tag => {
+            const estimationColumn = summary.showEstimation
+              ? `<td class="num">${this.formatDuration(tag.estimatedDuration)}</td>`
+              : '';
+            return `<tr><td>${this.escapeHtml(tag.tag)}</td><td class="num">${this.formatDuration(tag.duration)}</td>${estimationColumn}</tr>`;
+          })
+          .join('')
         : `<tr><td>no data</td><td class="num">00:00</td>${emptyEstimationColumn}</tr>`;
     const estimationTotalCell = summary.showEstimation
       ? `<th class="num">${this.formatDuration(estimatedTotalDuration)}</th>`
@@ -624,13 +649,13 @@ export class CommandsProvider extends DisposeProvider {
     const individualRows =
       summary.individualTags.length > 0
         ? summary.individualTags
-            .map(tag => {
-              const estimationColumn = summary.showEstimation
-                ? `<td class="num">${this.formatDuration(tag.estimatedDuration)}</td>`
-                : '';
-              return `<tr><td>${this.escapeHtml(tag.tag)}</td><td class="num">${this.formatDuration(tag.duration)}</td>${estimationColumn}</tr>`;
-            })
-            .join('')
+          .map(tag => {
+            const estimationColumn = summary.showEstimation
+              ? `<td class="num">${this.formatDuration(tag.estimatedDuration)}</td>`
+              : '';
+            return `<tr><td>${this.escapeHtml(tag.tag)}</td><td class="num">${this.formatDuration(tag.duration)}</td>${estimationColumn}</tr>`;
+          })
+          .join('')
         : `<tr><td>no data</td><td class="num">00:00</td>${emptyEstimationColumn}</tr>`;
     const individualSummarySection = summary.hasMultiTagIntervals
       ? `<div class="section">
